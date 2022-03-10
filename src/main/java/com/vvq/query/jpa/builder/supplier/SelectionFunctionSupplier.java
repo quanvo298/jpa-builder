@@ -1,4 +1,4 @@
-package com.vvquan.query.jpa.builder.supplier;
+package com.vvq.query.jpa.builder.supplier;
 
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;

@@ -1,4 +1,4 @@
-package com.vvquan.query.jpa.builder.column;
+package com.vvq.query.jpa.builder.column;
 
 import java.time.LocalDateTime;
 import java.util.List;

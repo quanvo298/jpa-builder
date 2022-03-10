@@ -1,7 +1,7 @@
-package com.vvquan.query.jpa.builder;
+package com.vvq.query.jpa.builder;
 
-import com.vvquan.query.jpa.builder.column.ColumnQuery;
-import com.vvquan.query.jpa.builder.column.DateTimeColumn;
+import com.vvq.query.jpa.builder.column.ColumnQuery;
+import com.vvq.query.jpa.builder.column.DateTimeColumn;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;

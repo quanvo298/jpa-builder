@@ -1,6 +1,5 @@
-package com.vvquan.query.jpa.builder.column;
+package com.vvq.query.jpa.builder.column;
 
-import java.time.LocalDate;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.From;
@@ -11,28 +10,20 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder(builderMethodName = "internalBuilder")
 @Getter
-public class DateColumn extends ColumnQuery<LocalDate> {
+public class DoubleColumn extends ColumnQuery<Double> {
 
-  private LocalDate startDate;
-
-  private LocalDate endDate;
-
-  public static DateColumn.DateColumnBuilder builder(String name) {
+  public static DoubleColumn.DoubleColumnBuilder builder(String name) {
     return internalBuilder().columnName(name);
   }
 
   public Predicate createPredicatesByValues(
-      From<?, ?> root, CriteriaBuilder cb, Path<LocalDate> path) {
-    if (this.startDate != null && this.endDate != null) {
-      return cb.between(path, this.startDate, this.endDate);
-    }
-
-    List<LocalDate> valuesFiltered = this.filterNull();
+      From<?, ?> root, CriteriaBuilder cb, Path<Double> path) {
+    List<Double> valuesFiltered = this.filterNull();
     if (isEmpty(valuesFiltered)) {
       return null;
     }
     if (isSingle(valuesFiltered)) {
-      LocalDate value = this.getFirst(valuesFiltered);
+      Double value = this.getFirst(valuesFiltered);
       return this.createPredicateFromOperator(cb, path, value);
     }
 

@@ -1,7 +1,7 @@
-package com.vvquan.query.jpa.builder.column;
+package com.vvq.query.jpa.builder.column;
 
-import com.vvquan.query.jpa.builder.BaseQueryConst;
-import com.vvquan.query.jpa.builder.helper.RepositoryHelper;
+import com.vvq.query.jpa.builder.BaseQueryConst;
+import com.vvq.query.jpa.builder.helper.RepositoryHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

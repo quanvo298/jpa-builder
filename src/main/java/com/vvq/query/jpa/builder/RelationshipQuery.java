@@ -1,4 +1,4 @@
-package com.vvquan.query.jpa.builder;
+package com.vvq.query.jpa.builder;
 
 import javax.persistence.criteria.JoinType;
 import lombok.Builder;

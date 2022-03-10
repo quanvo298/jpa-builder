@@ -1,4 +1,4 @@
-package com.vvquan.query.jpa.builder.column;
+package com.vvq.query.jpa.builder.column;
 
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -10,23 +10,22 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder(builderMethodName = "internalBuilder")
 @Getter
-public class DoubleColumn extends ColumnQuery<Double> {
+public class BooleanColumn extends ColumnQuery<Boolean> {
 
-  public static DoubleColumn.DoubleColumnBuilder builder(String name) {
+  public static BooleanColumn.BooleanColumnBuilder builder(String name) {
     return internalBuilder().columnName(name);
   }
 
   public Predicate createPredicatesByValues(
-      From<?, ?> root, CriteriaBuilder cb, Path<Double> path) {
-    List<Double> valuesFiltered = this.filterNull();
+      From<?, ?> root, CriteriaBuilder cb, Path<Boolean> path) {
+    List<Boolean> valuesFiltered = this.filterNull();
     if (isEmpty(valuesFiltered)) {
       return null;
     }
-    if (isSingle(valuesFiltered)) {
-      Double value = this.getFirst(valuesFiltered);
-      return this.createPredicateFromOperator(cb, path, value);
+    if (this.isSingle(valuesFiltered)) {
+      return this.getFirst(valuesFiltered) == true ? cb.isTrue(path) : cb.isFalse(path);
     }
 
-    return path.in(valuesFiltered);
+    return null;
   }
 }

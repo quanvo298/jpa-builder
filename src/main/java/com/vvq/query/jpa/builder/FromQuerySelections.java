@@ -1,8 +1,8 @@
-package com.vvquan.query.jpa.builder;
+package com.vvq.query.jpa.builder;
 
-import com.vvquan.query.jpa.builder.column.ColumnQuery;
-import com.vvquan.query.jpa.builder.supplier.PredicatesSupplier;
-import com.vvquan.query.jpa.builder.supplier.SelectionsSupplier;
+import com.vvq.query.jpa.builder.column.ColumnQuery;
+import com.vvq.query.jpa.builder.supplier.PredicatesSupplier;
+import com.vvq.query.jpa.builder.supplier.SelectionsSupplier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

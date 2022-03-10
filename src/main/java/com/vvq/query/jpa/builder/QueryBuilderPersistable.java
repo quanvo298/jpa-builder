@@ -1,3 +1,3 @@
-package com.vvquan.query.jpa.builder;
+package com.vvq.query.jpa.builder;
 
 public interface QueryBuilderPersistable {}

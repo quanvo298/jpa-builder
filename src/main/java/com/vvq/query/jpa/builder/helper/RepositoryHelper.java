@@ -1,10 +1,10 @@
-package com.vvquan.query.jpa.builder.helper;
+package com.vvq.query.jpa.builder.helper;
 
-import com.vvquan.query.jpa.builder.BaseQuery;
-import com.vvquan.query.jpa.builder.BaseQueryConst;
-import com.vvquan.query.jpa.builder.EntityQuery;
-import com.vvquan.query.jpa.builder.QueryBuilderPersistable;
-import com.vvquan.query.jpa.builder.RelationshipQuery;
+import com.vvq.query.jpa.builder.BaseQuery;
+import com.vvq.query.jpa.builder.BaseQueryConst;
+import com.vvq.query.jpa.builder.EntityQuery;
+import com.vvq.query.jpa.builder.QueryBuilderPersistable;
+import com.vvq.query.jpa.builder.RelationshipQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -1,6 +1,6 @@
-package com.vvquan.query.jpa.builder.column;
+package com.vvq.query.jpa.builder.column;
 
-import com.vvquan.query.jpa.builder.BaseQueryConst;
+import com.vvq.query.jpa.builder.BaseQueryConst;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.From;
