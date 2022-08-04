@@ -8,6 +8,7 @@ import com.vvq.query.jpa.builder.RelationshipQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -96,13 +97,13 @@ public class RepositoryHelper {
 
     predicates.addAll(queryResource.buildPredicates(root, cb));
     predicates =
-        predicates.stream().filter(predicate -> predicate != null).collect(Collectors.toList());
-    final List<Predicate> finalPredicates = new ArrayList(2);
+        predicates.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    /*final List<Predicate> finalPredicates = new ArrayList(2);
     finalPredicates.add(cb.equal(root.get(EntityQuery.deleted), false));
     if (!CollectionUtils.isEmpty(predicates)) {
       finalPredicates.add(buildJunction(cb, predicates, queryResource.getGlobalJunction()));
-    }
-    return buildJunction(cb, finalPredicates);
+    }*/
+    return buildJunction(cb, predicates);
   }
 
   public static <
