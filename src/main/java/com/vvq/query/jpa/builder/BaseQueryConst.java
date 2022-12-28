@@ -17,4 +17,8 @@ public interface BaseQueryConst {
     EndLike,
     In
   }
+
+  static BaseQueryConst.Junction getStaticGlobalJunction() {
+    return BaseQueryConst.Junction.And;
+  }
 }
