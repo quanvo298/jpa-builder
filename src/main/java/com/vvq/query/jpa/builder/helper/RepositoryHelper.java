@@ -2,10 +2,10 @@ package com.vvq.query.jpa.builder.helper;
 
 import com.vvq.query.jpa.builder.BaseQuery;
 import com.vvq.query.jpa.builder.BaseQueryConst;
-import com.vvq.query.jpa.builder.EntityQuery;
 import com.vvq.query.jpa.builder.QueryBuilderPersistable;
 import com.vvq.query.jpa.builder.RelationshipQuery;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -124,9 +124,10 @@ public class RepositoryHelper {
       joins.put(createJoinKey(joinInfo.getJavaType(), root.getJavaType(), attributeName), joinInfo);
       Q qResource = rq.getResource();
       if (qResource != null && joinInfo != null) {
-        joinInfo.on(
-            RepositoryHelper.buildJunction(
-                cb, qResource.buildPredicates(joinInfo, cb), qResource.getGlobalJunction()));
+        List<Predicate> predicatesList = qResource.buildPredicates(joinInfo, cb);
+        if (CollectionUtils.isNotEmpty(predicatesList)){
+          joinInfo.on(predicatesList.toArray(new Predicate[predicatesList.size()]));
+        }
         joins.putAll(qResource.buildJoins(joinInfo, query, cb, predicates));
       }
       return joinInfo;

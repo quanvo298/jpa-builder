@@ -4,6 +4,7 @@ import com.vvq.query.jpa.builder.BaseQueryConst;
 import com.vvq.query.jpa.builder.helper.RepositoryHelper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
@@ -87,7 +88,7 @@ public abstract class ColumnQuery<Y> {
     }
   }
 
-  public Predicate createPredicate(From<?, ?> root, CriteriaBuilder cb) {
+  public Optional<Predicate> createPredicate(From<?, ?> root, CriteriaBuilder cb) {
     List<Predicate> predicates = new ArrayList<>(5);
     Path<Y> path = null;
     if (StringUtils.isNotEmpty(this.columnName)) {
@@ -99,9 +100,9 @@ public abstract class ColumnQuery<Y> {
       predicates.add(predicate);
     }
     if (CollectionUtils.isEmpty(predicates)) {
-      return null;
+      return Optional.empty();
     }
-    return RepositoryHelper.buildJunction(cb, predicates, BaseQueryConst.Junction.And);
+    return Optional.of(RepositoryHelper.buildJunction(cb, predicates, BaseQueryConst.Junction.And));
   }
 
   public abstract Predicate createPredicatesByValues(
