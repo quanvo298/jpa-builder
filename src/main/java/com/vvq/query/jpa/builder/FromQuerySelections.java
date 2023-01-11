@@ -1,6 +1,7 @@
 package com.vvq.query.jpa.builder;
 
 import com.vvq.query.jpa.builder.column.ColumnQuery;
+import com.vvq.query.jpa.builder.context.QuerySelectionsContext;
 import com.vvq.query.jpa.builder.supplier.PredicatesSupplier;
 import com.vvq.query.jpa.builder.supplier.SelectionsSupplier;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public abstract class FromQuerySelections {
   PredicatesSupplier predicatesSupplier;
 
   List<Selection<?>> multiSelections;
-  Map<String, Join<?, ?>> joins;
+  Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>> joins;
 
   public abstract List<ColumnQuery.ColumnQueryBuilder> getColumnQueries();
 
@@ -37,20 +38,24 @@ public abstract class FromQuerySelections {
     return multiSelections == null ? Collections.emptyList() : multiSelections;
   }
 
-  public BaseQueryConst.Junction getGlobalJunction() {
-    return BaseQueryConst.Junction.And;
-  }
-
   public void addMultiSelections(From<?, ?> root, CriteriaBuilder cb) {
     if (this.selectionsSupplier != null) {
       if (this.multiSelections == null) {
         this.multiSelections = new ArrayList<>(10);
       }
-      this.multiSelections.addAll(this.selectionsSupplier.getSelections(root, cb, this.joins));
+      this.multiSelections.addAll(
+          this.selectionsSupplier.getSelections(
+              QuerySelectionsContext.builder()
+                  .root(root)
+                  .joins(this.joins == null ? Collections.emptyMap() : this.joins)
+                  .build(),
+              cb));
     }
   }
 
-  public void addJoins(Map<String, Join<?, ?>> joins) {
+  public void addJoins(
+      Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>>
+          joins) {
     if (this.joins == null) {
       this.joins = new HashMap<>(5);
     }

@@ -5,10 +5,10 @@ import com.vvq.query.jpa.builder.BaseQueryConst;
 import com.vvq.query.jpa.builder.QueryBuilderPersistable;
 import com.vvq.query.jpa.builder.RelationshipQuery;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -31,7 +31,7 @@ public class RepositoryHelper {
     if (!ignoreFetch && resource.isFetchInfo()) {
       joinInfo = (Join<T, E>) (root.<T, E>fetch(attributeName, joinType));
     } else {
-      joinInfo = root.<T, E>join(attributeName, joinType);
+      joinInfo = root.join(attributeName, joinType);
     }
     return joinInfo;
   }
@@ -79,10 +79,11 @@ public class RepositoryHelper {
       roots.forEach(exRoot -> queryResource.addMultiSelections(exRoot, cb));
     }
 
-    Map<String, Join<?, ?>> joins = queryResource.buildJoins(root, query, cb, predicates);
+    Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>> joins =
+        queryResource.buildJoins(root, query, cb, predicates);
     if (!joins.isEmpty()) {
       queryResource.addJoins(joins);
-      joins.forEach((string, join) -> queryResource.addMultiSelections(join, cb));
+      queryResource.addMultiSelections(root, cb);
     }
 
     List<Expression<?>> groupBy = queryResource.groupBy(root, cb);
@@ -96,8 +97,7 @@ public class RepositoryHelper {
     }
 
     predicates.addAll(queryResource.buildPredicates(root, cb));
-    predicates =
-        predicates.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    predicates = predicates.stream().filter(Objects::nonNull).collect(Collectors.toList());
     /*final List<Predicate> finalPredicates = new ArrayList(2);
     finalPredicates.add(cb.equal(root.get(EntityQuery.deleted), false));
     if (!CollectionUtils.isEmpty(predicates)) {
@@ -121,11 +121,11 @@ public class RepositoryHelper {
           List<Predicate> predicates) {
     if (rq != null) {
       Join<T, E> joinInfo = RepositoryHelper.buildJoinInfo(root, rq, attributeName, countQuery);
-      joins.put(createJoinKey(joinInfo.getJavaType(), root.getJavaType(), attributeName), joinInfo);
+      joins.put(createJoinKey(joinInfo, root, attributeName), joinInfo);
       Q qResource = rq.getResource();
       if (qResource != null && joinInfo != null) {
         List<Predicate> predicatesList = qResource.buildPredicates(joinInfo, cb);
-        if (CollectionUtils.isNotEmpty(predicatesList)){
+        if (CollectionUtils.isNotEmpty(predicatesList)) {
           joinInfo.on(predicatesList.toArray(new Predicate[predicatesList.size()]));
         }
         joins.putAll(qResource.buildJoins(joinInfo, query, cb, predicates));
@@ -135,15 +135,24 @@ public class RepositoryHelper {
     return null;
   }
 
-  public static Join<?, ?> getJoin(
-      Class jClass, Class rClass, String attributeName, Map<String, Join<?, ?>> joins) {
+  public static <J extends QueryBuilderPersistable, R extends QueryBuilderPersistable>
+      Optional<Join<J, R>> getJoin(
+          Class<J> jClass,
+          Class<R> rClass,
+          String attributeName,
+          Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>>
+              joins) {
     if (!joins.isEmpty()) {
-      return joins.get(createJoinKey(jClass, rClass, attributeName));
+      return Optional.of((Join<J, R>) joins.get(createJoinKey(jClass, rClass, attributeName)));
     }
-    return null;
+    return Optional.empty();
   }
 
-  private static String createJoinKey(Class jClass, Class rClass, String attributeName) {
+  public static String createJoinKey(Join<?, ?> joinInfo, From<?, ?> root, String attributeName) {
+    return createJoinKey(joinInfo.getJavaType(), root.getJavaType(), attributeName);
+  }
+
+  public static String createJoinKey(Class jClass, Class rClass, String attributeName) {
     return new StringBuilder(50)
         .append(jClass.getName())
         .append(".")

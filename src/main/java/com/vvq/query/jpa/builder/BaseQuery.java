@@ -72,7 +72,7 @@ public class BaseQuery<P extends QueryBuilderPersistable> extends FromQuerySelec
           P extends QueryBuilderPersistable,
           C extends BaseQuery<P>,
           B extends BaseQueryBuilder<P, C, B>>
-      extends FromQuerySelectionsBuilder<C, B> {
+      extends FromQuerySelectionsBuilder< C, B> {
 
     private ColumnQuery.ColumnQueryBuilder lastColumnQuery() {
       return this.columnQueries.get(this.columnQueries.size() - 1);
