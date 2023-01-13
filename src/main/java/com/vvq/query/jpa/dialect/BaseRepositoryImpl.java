@@ -3,11 +3,15 @@ package com.vvq.query.jpa.dialect;
 import static org.springframework.data.jpa.repository.query.QueryUtils.toOrders;
 
 import com.vvq.query.jpa.builder.BaseQuery;
-import com.vvq.query.jpa.builder.BaseTupleQuery;
 import com.vvq.query.jpa.builder.supplier.PersistableTupleSupplier;
+import com.vvq.query.jpa.builder.supplier.paras.AfterTuplePopulateParas;
+import com.vvq.query.jpa.builder.supplier.paras.WrapperTupleParas;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -25,6 +29,7 @@ import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRepository<T, ID>
     implements BaseRepository<T, ID> {
@@ -57,19 +62,11 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
   }
 
   @Override
-  public <Q extends BaseTupleQuery, B extends BaseQuery>
-      Q findOne(
-          B resource,
-          Specification<T> spec,
-          PersistableTupleSupplier<Q> persistableFunctionSupplier) {
+  public <B extends BaseQuery> Optional<T> findOne(
+      B resource, Specification<T> spec, PersistableTupleSupplier<T> persistableFunctionSupplier) {
     final TypedQuery<Tuple> query =
         getTypedQuery(resource, spec, getDomainClass(), Sort.unsorted());
-    Tuple tuple = query.getSingleResult();
-    if (tuple == null) {
-      return null;
-    }
-    Q result = persistableFunctionSupplier.getFromTuple(tuple);
-    return result;
+    return this.getSingleResult(resource, query, persistableFunctionSupplier);
   }
 
   @Override
@@ -86,41 +83,28 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
       query.setFirstResult((int) pageable.getOffset());
       query.setMaxResults(pageable.getPageSize());
     }
-    List<Tuple> tupleList = query.getResultList();
-    List<T> result = new ArrayList<>(tupleList.size());
-    tupleList.forEach(
-        tuple -> {
-          result.add(persistableFunctionSupplier.getFromTuple(tuple));
-        });
+
+    List<T> result = getResultList(resource, query, persistableFunctionSupplier);
     return PageableExecutionUtils.getPage(
         result, pageable, () -> executeCountQuery(getCountQuery(spec, domainClass)));
   }
 
   @Override
-  public <B extends BaseQuery>
-      List<T> findAll(
-          B resource,
-          Specification<T> spec,
-          PersistableTupleSupplier<T> persistableFunctionSupplier) {
+  public <B extends BaseQuery> List<T> findAll(
+      B resource, Specification<T> spec, PersistableTupleSupplier<T> persistableFunctionSupplier) {
     final TypedQuery<Tuple> query =
         getTypedQuery(resource, spec, getDomainClass(), Sort.unsorted());
-    List<Tuple> tupleList = query.getResultList();
-    List<T> result = new ArrayList<>(tupleList.size());
-    tupleList.forEach(
-        tuple -> {
-          result.add(persistableFunctionSupplier.getFromTuple(tuple));
-        });
+    List<T> result = getResultList(resource, query, persistableFunctionSupplier);
     return result;
   }
 
   @Override
-  public <Q extends BaseTupleQuery, B extends BaseQuery>
-      List<Q> findAll(
-          B resource,
-          Specification<T> spec,
-          PersistableTupleSupplier<Q> persistableFunctionSupplier,
-          final int offset,
-          final int maxResults) {
+  public <B extends BaseQuery> List<T> findAll(
+      B resource,
+      Specification<T> spec,
+      PersistableTupleSupplier<T> persistableFunctionSupplier,
+      final int offset,
+      final int maxResults) {
     if (offset < 0) {
       throw new IllegalArgumentException("Offset must not be less than zero!");
     }
@@ -133,12 +117,7 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
 
     query.setFirstResult(offset);
     query.setMaxResults(maxResults);
-    List<Tuple> tupleList = query.getResultList();
-    List<Q> result = new ArrayList<>(tupleList.size());
-    tupleList.forEach(
-        tuple -> {
-          result.add(persistableFunctionSupplier.getFromTuple(tuple));
-        });
+    List<T> result = getResultList(resource, query, persistableFunctionSupplier);
     return result;
   }
 
@@ -189,5 +168,60 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
     }
 
     return em.createQuery(query);
+  }
+
+  private List<T> getResultList(
+      BaseQuery resource,
+      TypedQuery<Tuple> query,
+      PersistableTupleSupplier<T> persistableFunctionSupplier) {
+    List<Tuple> tupleList = query.getResultList();
+    List<T> list =
+        tupleList.stream()
+            .map(tuple -> this.processResult(tuple, resource, persistableFunctionSupplier))
+            .collect(Collectors.toList());
+    return list;
+  }
+
+  private Optional<T> getSingleResult(
+      BaseQuery resource,
+      TypedQuery<Tuple> query,
+      PersistableTupleSupplier<T> persistableFunctionSupplier) {
+    if (!resource.isSupportJoinFetch()) {
+      Tuple tuple = query.getSingleResult();
+      return Optional.of(this.processResult(tuple, resource, persistableFunctionSupplier));
+    }
+    List<Tuple> tupleList = query.getResultList();
+    if (CollectionUtils.isEmpty(tupleList)) {
+      return Optional.empty();
+    }
+    T result = this.processResult(tupleList.get(0), resource, persistableFunctionSupplier);
+    for (int rowIndex = 1; rowIndex < tupleList.size(); rowIndex++) {
+      Tuple tuple = tupleList.get(rowIndex);
+      this.processAfterResult(resource, tuple, result, rowIndex);
+    }
+    return Optional.of(result);
+  }
+
+  private T processResult(
+      Tuple tuple, BaseQuery resource, PersistableTupleSupplier<T> persistableFunctionSupplier) {
+    WrapperTupleParas wrapperTuple =
+        WrapperTupleParas.builder().currentTuple(tuple).tuples(Arrays.asList(tuple)).build();
+    T result = persistableFunctionSupplier.getFromTuple(wrapperTuple);
+    this.processAfterResult(resource, tuple, result, wrapperTuple.getRowIndex());
+    return result;
+  }
+
+  private void processAfterResult(BaseQuery resource, Tuple tuple, T result, int rowIndex) {
+    if (resource.getAfterTuplePopulated() == null) {
+      return;
+    }
+    resource
+        .getAfterTuplePopulated()
+        .afterGetFromTuple(
+            AfterTuplePopulateParas.builder()
+                .currentTuple(tuple)
+                .rowIndex(rowIndex)
+                .result(result)
+                .build());
   }
 }

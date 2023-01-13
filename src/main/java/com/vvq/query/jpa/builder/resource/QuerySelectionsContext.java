@@ -1,4 +1,4 @@
-package com.vvq.query.jpa.builder.context;
+package com.vvq.query.jpa.builder.resource;
 
 import com.vvq.query.jpa.builder.QueryBuilderPersistable;
 import com.vvq.query.jpa.builder.helper.RepositoryHelper;

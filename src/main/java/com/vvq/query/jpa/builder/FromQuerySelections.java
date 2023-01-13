@@ -1,7 +1,8 @@
 package com.vvq.query.jpa.builder;
 
 import com.vvq.query.jpa.builder.column.ColumnQuery;
-import com.vvq.query.jpa.builder.context.QuerySelectionsContext;
+import com.vvq.query.jpa.builder.resource.QuerySelectionsContext;
+import com.vvq.query.jpa.builder.supplier.AfterTuplePopulatedSupplier;
 import com.vvq.query.jpa.builder.supplier.PredicatesSupplier;
 import com.vvq.query.jpa.builder.supplier.SelectionsSupplier;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public abstract class FromQuerySelections {
 
   SelectionsSupplier selectionsSupplier;
   PredicatesSupplier predicatesSupplier;
+  AfterTuplePopulatedSupplier afterTuplePopulated;
 
   List<Selection<?>> multiSelections;
   Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>> joins;

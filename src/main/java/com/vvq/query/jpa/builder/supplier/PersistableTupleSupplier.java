@@ -1,8 +1,8 @@
 package com.vvq.query.jpa.builder.supplier;
 
-import javax.persistence.Tuple;
+import com.vvq.query.jpa.builder.supplier.paras.WrapperTupleParas;
 
 @FunctionalInterface
 public interface PersistableTupleSupplier<T> {
-  T getFromTuple(Tuple tuple);
+  T getFromTuple(WrapperTupleParas paras);
 }
