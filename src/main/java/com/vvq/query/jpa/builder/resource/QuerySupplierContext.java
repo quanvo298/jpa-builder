@@ -13,7 +13,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class QuerySelectionsContext {
+public class QuerySupplierContext {
   private From<?, ?> root;
   private Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>>
       joins;

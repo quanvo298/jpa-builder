@@ -1,7 +1,7 @@
 package com.vvq.query.jpa.builder;
 
 import com.vvq.query.jpa.builder.column.ColumnQuery;
-import com.vvq.query.jpa.builder.resource.QuerySelectionsContext;
+import com.vvq.query.jpa.builder.resource.QuerySupplierContext;
 import com.vvq.query.jpa.builder.supplier.AfterTuplePopulatedSupplier;
 import com.vvq.query.jpa.builder.supplier.PredicatesSupplier;
 import com.vvq.query.jpa.builder.supplier.SelectionsSupplier;
@@ -47,7 +47,7 @@ public abstract class FromQuerySelections {
       }
       this.multiSelections.addAll(
           this.selectionsSupplier.getSelections(
-              QuerySelectionsContext.builder()
+              QuerySupplierContext.builder()
                   .root(root)
                   .joins(this.joins == null ? Collections.emptyMap() : this.joins)
                   .build(),
@@ -93,8 +93,9 @@ public abstract class FromQuerySelections {
   }
 
   private List<Predicate> createExtPredicates(Root root, CriteriaBuilder cb) {
-    if (this.predicatesSupplier != null && !this.joins.isEmpty()) {
-      return this.predicatesSupplier.getPredicates(root, cb, this.joins);
+    if (this.predicatesSupplier != null && this.joins != null && !this.joins.isEmpty()) {
+      return this.predicatesSupplier.getPredicates(
+          QuerySupplierContext.builder().root(root).joins(this.joins).build(), cb);
     }
     return Collections.emptyList();
   }
