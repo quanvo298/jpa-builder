@@ -3,6 +3,7 @@ package com.vvq.query.jpa.builder.column;
 import com.vvq.query.jpa.builder.BaseQueryConst;
 import com.vvq.query.jpa.builder.helper.RepositoryHelper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ public abstract class ColumnQuery<Y> {
   String columnName;
 
   Boolean isNotNull;
+
+  boolean orNull;
 
   boolean notOperator;
 
@@ -97,7 +100,11 @@ public abstract class ColumnQuery<Y> {
     }
     Predicate predicate = createPredicatesByValues(root, cb, path);
     if (predicate != null) {
-      predicates.add(predicate);
+      predicates.add(
+          this.orNull
+              ? RepositoryHelper.buildJunction(
+                  cb, Arrays.asList(predicate, path.isNull()), BaseQueryConst.Junction.Or)
+              : predicate);
     }
     if (CollectionUtils.isEmpty(predicates)) {
       return Optional.empty();

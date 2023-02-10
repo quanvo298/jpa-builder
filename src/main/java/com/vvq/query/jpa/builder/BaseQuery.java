@@ -88,6 +88,14 @@ public class BaseQuery<P extends QueryBuilderPersistable> extends FromQuerySelec
       return updateLastColumnQuery(lastColumnQuery().operator(operator));
     }
 
+    public B not() {
+      return updateLastColumnQuery(lastColumnQuery().notOperator(true));
+    }
+
+    public B orNull() {
+      return updateLastColumnQuery(lastColumnQuery().orNull(true));
+    }
+
     public B between(LocalDateTime time, String start, String end) {
       if (time == null) {
         return self();

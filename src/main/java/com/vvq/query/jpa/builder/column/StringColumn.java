@@ -29,7 +29,7 @@ public class StringColumn extends ColumnQuery<String> {
       return createSingleValue(cb, path, value);
     }
 
-    return path.in(values);
+    return this.notOperator ? cb.not(path.in(values)) : path.in(values);
   }
 
   private Predicate createSingleValue(CriteriaBuilder cb, Path<String> path, String value) {
