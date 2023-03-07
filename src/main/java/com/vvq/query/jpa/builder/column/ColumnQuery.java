@@ -30,6 +30,8 @@ public abstract class ColumnQuery<Y> {
 
   boolean notOperator;
 
+  boolean lowerCase;
+
   BaseQueryConst.Operator operator;
 
   @Singular List<Y> values;

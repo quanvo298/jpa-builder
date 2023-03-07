@@ -3,9 +3,9 @@ package com.vvq.query.jpa.builder.supplier;
 import com.vvq.query.jpa.builder.context.QuerySupplierContext;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Order;
 
 @FunctionalInterface
-public interface PredicatesSupplier<T> {
-  List<Predicate> getPredicates(QuerySupplierContext context, CriteriaBuilder cb);
+public interface OrderBySupplier {
+  List<Order> getOrderBy(QuerySupplierContext context, CriteriaBuilder cb);
 }

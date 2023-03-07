@@ -73,18 +73,20 @@ public class RepositoryHelper {
           : cb.and(predicates.toArray(new Predicate[predicates.size()]));
     }
 
-    queryResource.addMultiSelections(root, cb);
+    // SimpleQueryResource simpleQueryResource = new SimpleQueryResource(queryResource);
+
     List<Root<?>> roots = queryResource.buildRoots(root, query, cb, predicates);
     if (!CollectionUtils.isEmpty(roots)) {
-      roots.forEach(exRoot -> queryResource.addMultiSelections(exRoot, cb));
+      queryResource.addAdditionalRoots(roots);
     }
 
     Map<String, Join<? extends QueryBuilderPersistable, ? extends QueryBuilderPersistable>> joins =
         queryResource.buildJoins(root, query, cb, predicates);
     if (!joins.isEmpty()) {
       queryResource.addJoins(joins);
-      queryResource.addMultiSelections(root, cb);
     }
+
+    queryResource.addMultiSelections(root, cb);
 
     List<Expression<?>> groupBy = queryResource.groupBy(root, cb);
     if (!CollectionUtils.isEmpty(groupBy)) {
@@ -98,6 +100,7 @@ public class RepositoryHelper {
 
     predicates.addAll(queryResource.buildPredicates(root, cb));
     predicates = predicates.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
     /*final List<Predicate> finalPredicates = new ArrayList(2);
     finalPredicates.add(cb.equal(root.get(EntityQuery.deleted), false));
     if (!CollectionUtils.isEmpty(predicates)) {

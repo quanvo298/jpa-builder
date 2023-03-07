@@ -3,6 +3,7 @@ package com.vvq.query.jpa.dialect;
 import static org.springframework.data.jpa.repository.query.QueryUtils.toOrders;
 
 import com.vvq.query.jpa.builder.BaseQuery;
+import com.vvq.query.jpa.builder.BaseTupleQuery;
 import com.vvq.query.jpa.builder.supplier.PersistableTupleSupplier;
 import com.vvq.query.jpa.builder.supplier.paras.AfterTuplePopulateParas;
 import com.vvq.query.jpa.builder.supplier.paras.WrapperTupleParas;
@@ -122,6 +123,66 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
   }
 
   @Override
+  public <TP extends BaseTupleQuery, B extends BaseQuery> Optional<TP> findTupleOne(
+      B resource, Specification<T> spec, PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    final TypedQuery<Tuple> query =
+        getTypedQuery(resource, spec, getDomainClass(), Sort.unsorted());
+    return this.getSingleTupleResult(resource, query, persistableFunctionSupplier);
+  }
+
+  @Override
+  public <TP extends BaseTupleQuery, B extends BaseQuery> Page<TP> findTupleAll(
+      B resource,
+      Specification<T> spec,
+      Pageable pageable,
+      PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    Sort sort = pageable.isPaged() ? pageable.getSort() : Sort.unsorted();
+    Class<T> domainClass = getDomainClass();
+    final TypedQuery<Tuple> query = getTypedQuery(resource, spec, domainClass, sort);
+
+    if (pageable.isPaged()) {
+      query.setFirstResult((int) pageable.getOffset());
+      query.setMaxResults(pageable.getPageSize());
+    }
+    List<TP> result = getTupleResultList(resource, query, persistableFunctionSupplier);
+
+    return PageableExecutionUtils.getPage(
+        result, pageable, () -> executeCountQuery(getCountQuery(spec, domainClass)));
+  }
+
+  @Override
+  public <TP extends BaseTupleQuery, B extends BaseQuery> List<TP> findTupleAll(
+      B resource, Specification<T> spec, PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    final TypedQuery<Tuple> query =
+        getTypedQuery(resource, spec, getDomainClass(), Sort.unsorted());
+    List<TP> result = getTupleResultList(resource, query, persistableFunctionSupplier);
+    return result;
+  }
+
+  @Override
+  public <TP extends BaseTupleQuery, B extends BaseQuery> List<TP> findTupleAll(
+      B resource,
+      Specification<T> spec,
+      PersistableTupleSupplier<TP> persistableFunctionSupplier,
+      final int offset,
+      final int maxResults) {
+    if (offset < 0) {
+      throw new IllegalArgumentException("Offset must not be less than zero!");
+    }
+    if (maxResults < 1) {
+      throw new IllegalArgumentException("Max results must not be less than one!");
+    }
+
+    final TypedQuery<Tuple> query =
+        getTypedQuery(resource, spec, getDomainClass(), Sort.unsorted());
+
+    query.setFirstResult(offset);
+    query.setMaxResults(maxResults);
+    List<TP> result = getTupleResultList(resource, query, persistableFunctionSupplier);
+    return result;
+  }
+
+  @Override
   public List<T> findAll(final Specification<T> spec, final int offset, final int maxResults) {
     return findAll(spec, offset, maxResults, Sort.unsorted());
   }
@@ -170,6 +231,28 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
     return em.createQuery(query);
   }
 
+  private <TP extends BaseTupleQuery> List<TP> getTupleResultList(
+      BaseQuery resource,
+      TypedQuery<Tuple> query,
+      PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    List<Tuple> tupleList = query.getResultList();
+    List<TP> list =
+        tupleList.stream()
+            .map(
+                tuple -> {
+                  WrapperTupleParas wrapperTuple =
+                      WrapperTupleParas.builder()
+                          .currentTuple(tuple)
+                          .tuples(Arrays.asList(tuple))
+                          .build();
+                  TP result = persistableFunctionSupplier.getFromTuple(wrapperTuple);
+                  this.processAfterResult(resource, tuple, result, wrapperTuple.getRowIndex());
+                  return result;
+                })
+            .collect(Collectors.toList());
+    return list;
+  }
+
   private List<T> getResultList(
       BaseQuery resource,
       TypedQuery<Tuple> query,
@@ -202,6 +285,26 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
     return Optional.of(result);
   }
 
+  private <TP extends BaseTupleQuery> Optional<TP> getSingleTupleResult(
+      BaseQuery resource,
+      TypedQuery<Tuple> query,
+      PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    if (!resource.isSupportJoinFetch()) {
+      Tuple tuple = query.getSingleResult();
+      return Optional.of(this.processTupleResult(tuple, resource, persistableFunctionSupplier));
+    }
+    List<Tuple> tupleList = query.getResultList();
+    if (CollectionUtils.isEmpty(tupleList)) {
+      return Optional.empty();
+    }
+    TP result = this.processTupleResult(tupleList.get(0), resource, persistableFunctionSupplier);
+    for (int rowIndex = 1; rowIndex < tupleList.size(); rowIndex++) {
+      Tuple tuple = tupleList.get(rowIndex);
+      this.processAfterResult(resource, tuple, result, rowIndex);
+    }
+    return Optional.of(result);
+  }
+
   private T processResult(
       Tuple tuple, BaseQuery resource, PersistableTupleSupplier<T> persistableFunctionSupplier) {
     WrapperTupleParas wrapperTuple =
@@ -211,7 +314,16 @@ public class BaseRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRep
     return result;
   }
 
-  private void processAfterResult(BaseQuery resource, Tuple tuple, T result, int rowIndex) {
+  private <TP extends BaseTupleQuery> TP processTupleResult(
+      Tuple tuple, BaseQuery resource, PersistableTupleSupplier<TP> persistableFunctionSupplier) {
+    WrapperTupleParas wrapperTuple =
+        WrapperTupleParas.builder().currentTuple(tuple).tuples(Arrays.asList(tuple)).build();
+    TP result = persistableFunctionSupplier.getFromTuple(wrapperTuple);
+    this.processAfterResult(resource, tuple, result, wrapperTuple.getRowIndex());
+    return result;
+  }
+
+  private void processAfterResult(BaseQuery resource, Tuple tuple, Object result, int rowIndex) {
     if (resource.getAfterTuplePopulated() == null) {
       return;
     }

@@ -96,6 +96,10 @@ public class BaseQuery<P extends QueryBuilderPersistable> extends FromQuerySelec
       return updateLastColumnQuery(lastColumnQuery().orNull(true));
     }
 
+    public B lower() {
+      return updateLastColumnQuery(lastColumnQuery().lowerCase(true));
+    }
+
     public B between(LocalDateTime time, String start, String end) {
       if (time == null) {
         return self();
