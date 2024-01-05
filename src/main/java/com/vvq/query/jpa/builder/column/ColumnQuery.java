@@ -1,22 +1,23 @@
 package com.vvq.query.jpa.builder.column;
 
-import com.vvq.query.jpa.builder.BaseQueryConst;
-import com.vvq.query.jpa.builder.helper.RepositoryHelper;
+import com.vvq.query.jpa.builder.JpaQueryConstant;
+import com.vvq.query.jpa.builder.Operator;
+import com.vvq.query.jpa.builder.utils.JpaQueryRepositoryUtil;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.From;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
 import lombok.Getter;
 import lombok.Singular;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 @Getter
 @SuperBuilder
@@ -28,17 +29,19 @@ public abstract class ColumnQuery<Y> {
 
   boolean orNull;
 
-  boolean notOperator;
+  boolean not;
 
   boolean lowerCase;
 
-  BaseQueryConst.Operator operator;
+  Operator operator;
 
   @Singular List<Y> values;
 
-  public BaseQueryConst.Operator getOperator(boolean useDefault) {
+  List<ColumnQuery.ColumnQueryBuilder> orColumns;
+
+  public Operator getOperator(boolean useDefault) {
     if (useDefault) {
-      return this.operator == null ? BaseQueryConst.Operator.Equal : this.operator;
+      return this.operator == null ? Operator.Equal : this.operator;
     }
     return this.operator;
   }
@@ -77,7 +80,10 @@ public abstract class ColumnQuery<Y> {
   }
 
   <Y extends Comparable<? super Y>> Predicate createPredicateFromOperator(
-      CriteriaBuilder cb, Path<? extends Y> path, Y value, BaseQueryConst.Operator searchOperator) {
+      CriteriaBuilder cb,
+      Path<? extends Y> path,
+      Y value,
+      Operator searchOperator) {
     switch (searchOperator) {
       case Greater:
         return cb.greaterThan(path, value);
@@ -89,7 +95,7 @@ public abstract class ColumnQuery<Y> {
         return cb.lessThanOrEqualTo(path, value);
       case Equal:
       default:
-        return this.notOperator ? cb.notEqual(path, value) : cb.equal(path, value);
+        return this.not ? cb.notEqual(path, value) : cb.equal(path, value);
     }
   }
 
@@ -104,14 +110,33 @@ public abstract class ColumnQuery<Y> {
     if (predicate != null) {
       predicates.add(
           this.orNull
-              ? RepositoryHelper.buildJunction(
-                  cb, Arrays.asList(predicate, path.isNull()), BaseQueryConst.Junction.Or)
+              ? JpaQueryRepositoryUtil.buildJunction(
+                  cb, Arrays.asList(predicate, path.isNull()), JpaQueryConstant.Junction.Or)
               : predicate);
     }
     if (CollectionUtils.isEmpty(predicates)) {
       return Optional.empty();
     }
-    return Optional.of(RepositoryHelper.buildJunction(cb, predicates, BaseQueryConst.Junction.And));
+    Predicate result =
+        JpaQueryRepositoryUtil.buildJunction(cb, predicates, JpaQueryConstant.Junction.And);
+
+    if (!CollectionUtils.isEmpty(orColumns)) {
+      Predicate orPredicate =
+          JpaQueryRepositoryUtil.buildJunction(
+              cb,
+              orColumns.stream()
+                  .map(
+                      columnQuery -> {
+                        Optional<Predicate> predicateOptional =
+                            columnQuery.build().createPredicate(root, cb);
+                        return predicateOptional.get();
+                      })
+                  .collect(Collectors.toList()));
+      result =
+          JpaQueryRepositoryUtil.buildJunction(
+              cb, List.of(result, orPredicate), JpaQueryConstant.Junction.Or);
+    }
+    return Optional.of(result);
   }
 
   public abstract Predicate createPredicatesByValues(

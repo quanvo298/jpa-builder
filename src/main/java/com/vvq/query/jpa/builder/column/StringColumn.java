@@ -1,12 +1,12 @@
 package com.vvq.query.jpa.builder.column;
 
-import com.vvq.query.jpa.builder.BaseQueryConst;
+import com.vvq.query.jpa.builder.Operator;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.From;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -30,14 +30,14 @@ public class StringColumn extends ColumnQuery<String> {
       return createSingleValue(cb, path, value);
     }
 
-    return this.notOperator ? cb.not(path.in(values)) : path.in(values);
+    return this.not ? cb.not(path.in(values)) : path.in(values);
   }
 
   private Predicate createSingleValue(CriteriaBuilder cb, Path<String> path, String value) {
     String wrapperValue = this.lowerCase ? value.toLowerCase() : value;
     Expression<String> wrapperPath = this.lowerCase ? cb.lower(path) : path;
     StringBuilder comparedValue = new StringBuilder(value.length() + 2);
-    BaseQueryConst.Operator correctOperator = this.getOperator(true);
+    Operator correctOperator = this.getOperator(true);
     switch (correctOperator) {
       case StartLike:
         comparedValue = comparedValue.append("%").append(wrapperValue);
@@ -52,12 +52,12 @@ public class StringColumn extends ColumnQuery<String> {
         comparedValue = comparedValue.append(wrapperValue);
         break;
     }
-    if (correctOperator == BaseQueryConst.Operator.Equal) {
-      return this.notOperator
+    if (correctOperator == Operator.Equal) {
+      return this.not
           ? cb.notEqual(wrapperPath, value)
           : cb.equal(wrapperPath, comparedValue.toString());
     }
-    return this.notOperator
+    return this.not
         ? cb.notLike(wrapperPath, value)
         : cb.like(wrapperPath, comparedValue.toString());
   }

@@ -1,10 +1,10 @@
 package com.vvq.query.jpa.builder.column;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import java.util.List;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.From;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(builderMethodName = "internalBuilder")
 public class LongColumn extends ColumnQuery<Long> {
 
-  public static LongColumnBuilder builder(String name) {
+  public static LongColumn.LongColumnBuilder builder(String name) {
     return internalBuilder().columnName(name);
   }
 

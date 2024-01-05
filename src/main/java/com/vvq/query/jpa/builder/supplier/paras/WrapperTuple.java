@@ -1,8 +1,8 @@
 package com.vvq.query.jpa.builder.supplier.paras;
 
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TupleElement;
 import java.util.List;
-import javax.persistence.Tuple;
-import javax.persistence.TupleElement;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

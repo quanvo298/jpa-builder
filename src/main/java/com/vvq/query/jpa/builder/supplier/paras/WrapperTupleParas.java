@@ -1,9 +1,10 @@
 package com.vvq.query.jpa.builder.supplier.paras;
 
+import jakarta.persistence.Tuple;
 import java.util.Collections;
 import java.util.List;
-import javax.persistence.Tuple;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -13,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WrapperTupleParas extends WrapperTuple {
-  private List<Tuple> tuples = Collections.emptyList();
+  private @Builder.Default List<Tuple> tuples = Collections.emptyList();
 
   public WrapperTupleParas(Tuple currentTuple, List<Tuple> tuples) {
     super(currentTuple);
